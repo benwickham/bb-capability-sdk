@@ -1,0 +1,1 @@
+This distribution repository mirrors the public package artifact built from `packages/capability-sdk` in https://github.com/benwickham/bb. It exists because the `@get-bb` npm scope is not currently writable by this maintainer. Capability collections can consume the SDK without a bb workspace dependency.
