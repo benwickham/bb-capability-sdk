@@ -251,6 +251,7 @@ interface FakeCapabilityBehaviorDrivers {
         cli: boolean;
         instructions: string | null;
         instructionMode: "append" | "replace";
+        includeCapabilityDisclosure?: true;
     }>;
 }
 /** Reload/shutdown controls, kept separate from behavior and inspection. */

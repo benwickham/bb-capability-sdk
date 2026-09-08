@@ -686,9 +686,14 @@ function normalizeAgentConfiguration(args) {
     throw new Error("configure() must return tools, not operations");
   }
   const unknownKeys = Object.keys(output).filter(
-    (key) => !["tools", "skills", "cli", "instructions", "experimental_instructionMode"].includes(
-      key
-    )
+    (key) => ![
+      "tools",
+      "skills",
+      "cli",
+      "instructions",
+      "experimental_instructionMode",
+      "experimental_includeCapabilityDisclosure"
+    ].includes(key)
   ).sort();
   if (unknownKeys.length > 0) {
     throw new Error(
@@ -712,6 +717,18 @@ function normalizeAgentConfiguration(args) {
     );
   }
   const requestedReplace = output.experimental_instructionMode === "replace";
+  if (Object.hasOwn(output, "experimental_includeCapabilityDisclosure")) {
+    if (output.experimental_includeCapabilityDisclosure !== true) {
+      throw new Error(
+        "configure() output.experimental_includeCapabilityDisclosure must be true"
+      );
+    }
+    if (!requestedReplace) {
+      throw new Error(
+        'configure() output.experimental_includeCapabilityDisclosure requires experimental_instructionMode: "replace"'
+      );
+    }
+  }
   const rawInstructions = typeof output.instructions === "string" ? output.instructions : void 0;
   const honorReplace = requestedReplace && args.originCapabilityId === args.capabilityId && rawInstructions !== void 0 && rawInstructions.trim().length > 0;
   const instructions = rawInstructions !== void 0 && rawInstructions.trim().length > 0 ? rawInstructions.slice(
@@ -733,7 +750,8 @@ function normalizeAgentConfiguration(args) {
     }),
     cli: output.cli,
     instructions,
-    instructionMode: honorReplace ? "replace" : "append"
+    instructionMode: honorReplace ? "replace" : "append",
+    includeCapabilityDisclosure: honorReplace && output.experimental_includeCapabilityDisclosure === true
   };
 }
 var fakeHostDisposers = /* @__PURE__ */ new WeakMap();
@@ -1759,7 +1777,8 @@ function createFakeCapabilityHostInternal(options, sharedState) {
           skills: normalized.skillIds,
           cli: normalized.cli,
           instructions: normalized.instructions,
-          instructionMode: normalized.instructionMode
+          instructionMode: normalized.instructionMode,
+          ...normalized.includeCapabilityDisclosure ? { includeCapabilityDisclosure: true } : {}
         };
       } catch (error) {
         emitLog("warn", `agent configure failed: ${errorMessage(error)}`);

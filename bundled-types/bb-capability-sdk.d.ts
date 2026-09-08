@@ -11366,6 +11366,9 @@ interface CapabilityMarketplaceRemoveArgs {
 interface CapabilityReloadArgs {
     capabilityId?: string;
 }
+interface CapabilityRelocateArgs extends CapabilityIdArgs {
+    capabilityRoot: string;
+}
 interface CapabilitySettingsUpdateArgs extends CapabilityIdArgs {
     values: Record<string, JsonValue$1>;
 }
@@ -11405,6 +11408,7 @@ type CapabilityEnableResult = InstalledCapability;
 type CapabilityGetSettingsResult = CapabilitySettingsResponse;
 type CapabilityInstallResult = InstalledCapability;
 type CapabilityListResult = CapabilityListResponse;
+type CapabilityRelocateResult = InstalledCapability;
 type CapabilityReloadResult = CapabilityReloadResponse;
 type CapabilityRemoveResult = CapabilityRemoveResponse;
 type CapabilityTokenResult = CapabilityTokenResponse;
@@ -11448,6 +11452,7 @@ interface CapabilitiesArea {
     getSource(args: CapabilityGetSourceArgs): Promise<CapabilityGetSourceResult>;
     install(args: CapabilityInstallArgs): Promise<CapabilityInstallResult>;
     list(args?: CapabilityListArgs): Promise<CapabilityListResult>;
+    relocate(args: CapabilityRelocateArgs): Promise<CapabilityRelocateResult>;
     listUpdateResults(args?: CapabilityListUpdateResultsArgs): Promise<CapabilityCheckUpdatesResult>;
     reload(args?: CapabilityReloadArgs): Promise<CapabilityReloadResult>;
     remove(args: CapabilityIdArgs): Promise<CapabilityRemoveResult>;
@@ -12639,13 +12644,21 @@ interface CapabilityAgentConfiguration {
      * system prompt for threads whose `origin.capabilityId` is this capability. Other
      * capabilities requesting replace are ignored. Omitted means append. */
     experimental_instructionMode?: "replace";
+    /** When `true`, BB suffixes the existing capability disclosure onto this
+     * origin-owned honored replacement prompt. Requires
+     * {@link CapabilityAgentConfiguration.experimental_instructionMode} `"replace"`.
+     * Only a non-empty replacement from the thread's origin carries this option.
+     * Omitted preserves exclusive replacement text with no disclosure. Present
+     * values other than literal `true` fail closed. */
+    experimental_includeCapabilityDisclosure?: true;
 }
 interface CapabilityAgents {
     /**
      * Select this capability's statically registered tools and manifest skills for
      * each thread/session resolution, with optional dynamic instructions or an
-     * origin-only `experimental_instructionMode: "replace"` prompt. The
-     * callback is synchronous and runs at `thread.start` / `turn.submit`; it
+     * origin-only `experimental_instructionMode: "replace"` prompt. An origin
+     * replacement may also set `experimental_includeCapabilityDisclosure: true`.
+     * The callback is synchronous and runs at `thread.start` / `turn.submit`; it
      * never rebuilds registrations. Exactly one callback may be registered per
      * factory execution. A throw, malformed result, duplicate id, unknown id,
      * or more than 256 tool/skill ids fails closed for this capability only.
